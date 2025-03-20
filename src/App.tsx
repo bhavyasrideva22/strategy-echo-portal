@@ -12,6 +12,13 @@ import Contact from "./pages/Contact";
 import Careers from "./pages/Careers";
 import DigitalTransformation from "./pages/DigitalTransformation";
 import PerformanceImprovement from "./pages/PerformanceImprovement";
+import OurTeam from "./pages/OurTeam";
+import FinancialServices from "./pages/FinancialServices";
+import Healthcare from "./pages/Healthcare";
+import Technology from "./pages/Technology";
+import Manufacturing from "./pages/Manufacturing";
+import Insights from "./pages/Insights";
+import StrategyConsulting from "./pages/StrategyConsulting";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +36,13 @@ const App = () => (
           <Route path="/strategy" element={<Strategy />} />
           <Route path="/digital" element={<DigitalTransformation />} />
           <Route path="/performance" element={<PerformanceImprovement />} />
+          <Route path="/our-team" element={<OurTeam />} />
+          <Route path="/strategy-consulting" element={<StrategyConsulting />} />
+          <Route path="/financial-services" element={<FinancialServices />} />
+          <Route path="/healthcare" element={<Healthcare />} />
+          <Route path="/technology" element={<Technology />} />
+          <Route path="/manufacturing" element={<Manufacturing />} />
+          <Route path="/insights" element={<Insights />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/careers" element={<Careers />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
