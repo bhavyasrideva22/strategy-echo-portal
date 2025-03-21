@@ -5,44 +5,78 @@ import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import Map from "@/components/Map";
+import { submitContactForm, validateContactForm, ContactFormData } from "@/services/contactService";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+
+// Define the form schema using Zod
+const formSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  company: z.string().optional(),
+  phone: z.string().optional(),
+  subject: z.string().min(3, { message: "Subject must be at least 3 characters." }),
+  message: z.string().min(10, { message: "Message must be at least 10 characters." }),
+});
 
 const Contact = () => {
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    company: "",
-    phone: "",
-    subject: "",
-    message: ""
-  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  // Initialize react-hook-form with zod validation
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      company: "",
+      phone: "",
+      subject: "",
+      message: ""
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const success = await submitContactForm(data as ContactFormData);
+      
+      if (success) {
+        toast({
+          title: "Message sent!",
+          description: "Thank you for contacting us. We'll get back to you soon.",
+        });
+        form.reset();
+      } else {
+        toast({
+          title: "Error",
+          description: "There was a problem sending your message. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
       toast({
-        title: "Message sent!",
-        description: "Thank you for contacting us. We'll get back to you soon.",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again later.",
+        variant: "destructive",
       });
-      setFormData({
-        name: "",
-        email: "",
-        company: "",
-        phone: "",
-        subject: "",
-        message: ""
-      });
-    }, 1500);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -132,109 +166,132 @@ const Contact = () => {
               <div className="lg:col-span-2">
                 <h2 className="text-2xl md:text-3xl font-bold text-focus-blue mb-8">Send Us a Message</h2>
                 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="name" className="block text-focus-blue font-medium mb-2">
-                        Full Name*
-                      </label>
-                      <input
-                        type="text"
-                        id="name"
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
                         name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-focus-blue font-medium">Full Name*</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="Enter your full name" 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="email" className="block text-focus-blue font-medium mb-2">
-                        Email Address*
-                      </label>
-                      <input
-                        type="email"
-                        id="email"
+                      
+                      <FormField
+                        control={form.control}
                         name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="company" className="block text-focus-blue font-medium mb-2">
-                        Company
-                      </label>
-                      <input
-                        type="text"
-                        id="company"
-                        name="company"
-                        value={formData.company}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-focus-blue font-medium">Email Address*</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="Enter your email address" 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
                     
-                    <div>
-                      <label htmlFor="phone" className="block text-focus-blue font-medium mb-2">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="company"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-focus-blue font-medium">Company</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="Enter your company name" 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
                         name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-focus-blue font-medium">Phone Number</FormLabel>
+                            <FormControl>
+                              <Input 
+                                {...field} 
+                                placeholder="Enter your phone number" 
+                                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="subject" className="block text-focus-blue font-medium mb-2">
-                      Subject*
-                    </label>
-                    <input
-                      type="text"
-                      id="subject"
+                    
+                    <FormField
+                      control={form.control}
                       name="subject"
-                      value={formData.subject}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-focus-blue font-medium">Subject*</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field} 
+                              placeholder="Enter subject" 
+                              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="message" className="block text-focus-blue font-medium mb-2">
-                      Message*
-                    </label>
-                    <textarea
-                      id="message"
+                    
+                    <FormField
+                      control={form.control}
                       name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                      rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
-                    ></textarea>
-                  </div>
-                  
-                  <div>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="bg-focus-accent hover:bg-blue-700 text-white px-8 py-3 rounded-md transition-colors duration-300"
-                    >
-                      {isSubmitting ? "Sending..." : "Send Message"}
-                    </Button>
-                  </div>
-                </form>
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-focus-blue font-medium">Message*</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              placeholder="Enter your message" 
+                              rows={6}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-focus-accent"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <div>
+                      <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="bg-focus-accent hover:bg-blue-700 text-white px-8 py-3 rounded-md transition-colors duration-300"
+                      >
+                        {isSubmitting ? "Sending..." : "Send Message"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
               </div>
             </div>
           </div>
@@ -242,17 +299,13 @@ const Contact = () => {
 
         {/* Map Section */}
         <section className="py-0">
-          <div className="h-[400px] w-full bg-gray-200">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2559.8842962912664!2d8.675247576905406!3d50.11092071181878!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47bd0ee47bd23f7d%3A0xb8e6d7298ef33619!2sFrankfurt%20am%20Main%2C%20Germany!5e0!3m2!1sen!2sus!4v1711653844837!5m2!1sen!2sus"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Focus Strategy Office Location"
-            ></iframe>
+          <div className="h-[400px] w-full">
+            <Map 
+              address="Focus Strategy GmbH, Frankfurt am Main, Germany"
+              lat={50.110921}
+              lng={8.682125}
+              zoom={14}
+            />
           </div>
         </section>
       </main>
